@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 import requests
+import os
 
 app = Flask(__name__)
 
@@ -33,13 +34,14 @@ cities = {
 def get_coordinates(city_name):
     url = f"https://geocoding-api.open-meteo.com/v1/search?name={city_name}&count=1"
     
-    response = requests.get(url)
-    data = response.json()
+    try:
+        response = requests.get(url)
+        data = response.json()
 
-    if "results" in data:
-        return data["results"][0]["latitude"], data["results"][0]["longitude"]
-    
-    return None
+        if "results" in data:
+            return data["results"][0]["latitude"], data["results"][0]["longitude"]
+    except:
+        return None
 
 
 def get_weather_condition(code):
@@ -81,7 +83,7 @@ def index():
     return render_template("index.html", cities=cities.keys(), weather=weather, selected_city=selected_city)
 
 if __name__ == "__main__":
-    app.run(debug = True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))    
 
 
 
