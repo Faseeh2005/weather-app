@@ -8,7 +8,7 @@ def get_weather(latitude, longitude):
     url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,wind_speed_10m,relative_humidity_2m,weather_code"
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         data = response.json()
 
         return{
@@ -35,13 +35,14 @@ def get_coordinates(city_name):
     url = f"https://geocoding-api.open-meteo.com/v1/search?name={city_name}&count=1"
     
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         data = response.json()
 
         if "results" in data:
             return data["results"][0]["latitude"], data["results"][0]["longitude"]
     except:
-        return None
+        pass
+    return None
 
 
 def get_weather_condition(code):
@@ -66,27 +67,27 @@ def get_weather_condition(code):
 def index():
     weather = None
     selected_city = None
+    error = None
 
     if request.method == "POST":
         selected_city = request.form.get("city")
 
-        coords = get_coordinates(selected_city)
-        if coords:
-            lat, lon = coords
-            weather = get_weather(lat,lon)
-
-            if weather:
-                weather["condition"] = get_weather_condition(weather["weather_code"])
+        if not selected_city:
+            error = "Please enter a city"
         else:
-            return "City not found"
+            coords = get_coordinates(selected_city)
+            if coords:
+                lat, lon = coords
+                weather = get_weather(lat,lon)
 
-    return render_template("index.html", cities=cities.keys(), weather=weather, selected_city=selected_city)
+                if weather:
+                    weather["condition"] = get_weather_condition(weather["weather_code"])
+            else:
+                error = "city not found"
+
+    return render_template("index.html", cities=cities.keys(), weather=weather, selected_city=selected_city, error=error)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))    
-
-
-
-
 
     
